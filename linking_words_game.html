@@ -2,15 +2,25 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#4facfe">
 <title>מילות קישור - משחק לבגרות</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { overscroll-behavior-y: contain; }
   body {
-    font-family: 'Segoe UI', Tahoma, sans-serif;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
     color: #333;
+    -webkit-text-size-adjust: 100%;
   }
   .container {
     max-width: 900px;
@@ -254,6 +264,8 @@
     display: block;
     direction: ltr;
     text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
   }
   .type-input:focus { outline: none; border-color: #4facfe; }
 
@@ -338,9 +350,72 @@
   .mistakes-list .m-eng { font-weight: bold; direction: ltr; display: inline-block; }
 
   @media (max-width: 600px) {
-    .options, .match-area { grid-template-columns: 1fr; }
-    .card-word { font-size: 30px; }
-    .question .q-word { font-size: 32px; }
+    body { padding: 10px; padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+    .container { border-radius: 16px; }
+    header { padding: 18px 15px; }
+    header h1 { font-size: 22px; }
+    header p { font-size: 12px; }
+
+    .stats-bar { padding: 10px 8px; gap: 4px; }
+    .stat { min-width: 0; flex: 1; }
+    .stat .num { font-size: 18px; }
+    .stat .label { font-size: 10px; }
+
+    .mode-selector {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+    .mode-btn { padding: 12px 6px; font-size: 13px; }
+    .mode-btn .icon { font-size: 20px; margin-bottom: 4px; }
+
+    .filters { padding: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .filters label { margin-left: 0; font-size: 13px; }
+    .filters select { font-size: 13px; padding: 6px 10px; flex: 1; min-width: 120px; }
+    .mistakes-toggle { width: 100%; margin-right: 0; font-size: 13px; }
+    #reset-btn { float: none !important; width: 100%; margin-top: 4px; }
+
+    .progress-bar { margin: 10px 12px; }
+    .game-area { padding: 18px 12px; min-height: 320px; }
+
+    .flashcard { height: 240px; }
+    .card-word { font-size: 26px; }
+    .card-cat { font-size: 12px; padding: 4px 10px; }
+    .card-hint { font-size: 11px; margin-top: 12px; }
+
+    .question .q-word { font-size: 28px; margin: 10px 0; }
+    .question .q-text { font-size: 14px; }
+    .question .q-cat { font-size: 11px; padding: 3px 10px; }
+
+    .options { grid-template-columns: 1fr; gap: 8px; }
+    .option { padding: 14px; font-size: 15px; }
+
+    .match-area { gap: 8px; }
+    .match-col h3 { font-size: 12px; margin-bottom: 8px; }
+    .match-item { padding: 10px 8px; font-size: 13px; margin-bottom: 6px; }
+
+    .type-area .q-word { font-size: 28px; }
+    .type-input { font-size: 16px; padding: 12px 14px; }
+
+    .controls { gap: 8px; margin-top: 14px; }
+    .btn { padding: 10px 18px; font-size: 14px; }
+
+    .summary { padding: 18px 10px; }
+    .summary h2 { font-size: 24px; }
+    .summary .score { font-size: 48px; margin: 12px 0; }
+    .summary p { font-size: 14px; }
+    .mistakes-list { padding: 12px; }
+    .mistakes-list h3 { font-size: 14px; }
+    .mistakes-list .m-item { font-size: 13px; padding: 5px 0; }
+  }
+
+  @media (max-width: 380px) {
+    header h1 { font-size: 19px; }
+    .mode-btn { font-size: 12px; padding: 10px 4px; }
+    .stat .num { font-size: 16px; }
+    .stat .label { font-size: 9px; }
+    .card-word { font-size: 22px; }
+    .question .q-word { font-size: 24px; }
   }
 </style>
 </head>
