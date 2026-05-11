@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>מילות קישור - משחק לבגרות</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  header {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: #fff;
+    padding: 25px;
+    text-align: center;
+  }
+  header h1 { font-size: 28px; margin-bottom: 8px; }
+  header p { font-size: 14px; opacity: 0.95; }
+
+  .stats-bar {
+    display: flex;
+    justify-content: space-around;
+    background: #f7f9fc;
+    padding: 15px;
+    border-bottom: 2px solid #e1e8ed;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .stat {
+    text-align: center;
+    min-width: 80px;
+  }
+  .stat .num { font-size: 22px; font-weight: bold; color: #4facfe; }
+  .stat .label { font-size: 12px; color: #666; }
+
+  .mode-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    padding: 20px;
+    background: #fff;
+  }
+  .mode-btn {
+    padding: 18px 12px;
+    border: 2px solid #e1e8ed;
+    background: #fff;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.2s;
+    color: #333;
+  }
+  .mode-btn:hover { border-color: #4facfe; transform: translateY(-2px); }
+  .mode-btn.active {
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: #fff;
+    border-color: transparent;
+  }
+  .mode-btn .icon { display: block; font-size: 24px; margin-bottom: 6px; }
+
+  .filters {
+    padding: 15px 20px;
+    background: #fafbfc;
+    border-top: 1px solid #e1e8ed;
+    border-bottom: 1px solid #e1e8ed;
+  }
+  .filters label { font-weight: 600; margin-left: 10px; font-size: 14px; }
+  .filters select {
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .mistakes-toggle {
+    margin-right: 15px;
+    font-size: 14px;
+  }
+
+  .game-area {
+    padding: 30px 25px;
+    min-height: 380px;
+  }
+
+  /* Flashcard */
+  .flashcard {
+    perspective: 1000px;
+    height: 280px;
+    margin: 20px auto;
+    max-width: 500px;
+    cursor: pointer;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+  .flashcard.flipped .card-inner { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  }
+  .card-front {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+  }
+  .card-back {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    color: #fff;
+    transform: rotateY(180deg);
+  }
+  .card-word { font-size: 38px; font-weight: bold; margin-bottom: 12px; direction: ltr; }
+  .card-cat { font-size: 14px; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 5px 14px; border-radius: 20px; }
+  .card-hint { margin-top: 18px; font-size: 13px; opacity: 0.8; }
+
+  /* Quiz */
+  .question {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+  .question .q-text {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .question .q-word {
+    font-size: 42px;
+    font-weight: bold;
+    color: #4facfe;
+    margin: 15px 0;
+    direction: ltr;
+  }
+  .question .q-cat {
+    font-size: 13px;
+    color: #999;
+    background: #f0f4f8;
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+  }
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+  .option {
+    padding: 18px;
+    border: 2px solid #e1e8ed;
+    background: #fff;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    text-align: center;
+    font-weight: 500;
+  }
+  .option:hover:not(.disabled) {
+    border-color: #4facfe;
+    background: #f0f9ff;
+  }
+  .option.correct {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+  }
+  .option.wrong {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+  }
+  .option.disabled { cursor: not-allowed; opacity: 0.7; }
+
+  /* Matching */
+  .match-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  .match-col h3 {
+    text-align: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #666;
+  }
+  .match-item {
+    padding: 14px;
+    margin-bottom: 8px;
+    border: 2px solid #e1e8ed;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: center;
+    background: #fff;
+    transition: all 0.2s;
+    font-size: 15px;
+  }
+  .match-item.eng { direction: ltr; font-weight: 600; }
+  .match-item:hover:not(.matched):not(.selected) {
+    border-color: #4facfe;
+    background: #f0f9ff;
+  }
+  .match-item.selected {
+    background: #4facfe;
+    color: #fff;
+    border-color: #4facfe;
+  }
+  .match-item.matched {
+    background: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+    cursor: default;
+    opacity: 0.7;
+  }
+  .match-item.wrong-flash {
+    background: #f8d7da;
+    border-color: #dc3545;
+  }
+
+  /* Type mode */
+  .type-area { text-align: center; }
+  .type-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 14px 18px;
+    font-size: 18px;
+    border: 2px solid #e1e8ed;
+    border-radius: 10px;
+    margin: 20px auto;
+    display: block;
+    direction: ltr;
+    text-align: center;
+  }
+  .type-input:focus { outline: none; border-color: #4facfe; }
+
+  .feedback {
+    text-align: center;
+    margin-top: 18px;
+    min-height: 30px;
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .feedback.correct { color: #28a745; }
+  .feedback.wrong { color: #dc3545; }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    background: linear-gradient(135deg, #4facfe, #00f2fe);
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: transform 0.2s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.secondary {
+    background: #fff;
+    color: #4facfe;
+    border: 2px solid #4facfe;
+  }
+  .btn.danger {
+    background: linear-gradient(135deg, #f5576c, #f093fb);
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: #e1e8ed;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 15px 25px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+    transition: width 0.3s;
+  }
+
+  .summary {
+    text-align: center;
+    padding: 30px;
+  }
+  .summary h2 { font-size: 32px; margin-bottom: 15px; color: #4facfe; }
+  .summary .score { font-size: 60px; font-weight: bold; margin: 20px 0; }
+  .summary .score.great { color: #28a745; }
+  .summary .score.good { color: #ffa500; }
+  .summary .score.poor { color: #dc3545; }
+  .summary p { font-size: 16px; color: #666; margin-bottom: 8px; }
+
+  .mistakes-list {
+    text-align: right;
+    max-width: 500px;
+    margin: 20px auto;
+    background: #fff5f5;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #fed7d7;
+  }
+  .mistakes-list h3 { color: #c53030; font-size: 15px; margin-bottom: 10px; }
+  .mistakes-list .m-item {
+    padding: 6px 0;
+    border-bottom: 1px solid #fed7d7;
+    font-size: 14px;
+  }
+  .mistakes-list .m-item:last-child { border-bottom: none; }
+  .mistakes-list .m-eng { font-weight: bold; direction: ltr; display: inline-block; }
+
+  @media (max-width: 600px) {
+    .options, .match-area { grid-template-columns: 1fr; }
+    .card-word { font-size: 30px; }
+    .question .q-word { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎯 מילות קישור באנגלית</h1>
+    <p>משחק לימוד מלא לבגרות - 4 מצבים, מעקב טעויות, וחידון מסכם</p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="num" id="stat-score">0</div><div class="label">ניקוד</div></div>
+    <div class="stat"><div class="num" id="stat-streak">0</div><div class="label">רצף 🔥</div></div>
+    <div class="stat"><div class="num" id="stat-correct">0</div><div class="label">נכון ✅</div></div>
+    <div class="stat"><div class="num" id="stat-wrong">0</div><div class="label">טעויות ❌</div></div>
+    <div class="stat"><div class="num" id="stat-mistakes">0</div><div class="label">לחזרה 📝</div></div>
+  </div>
+
+  <div class="mode-selector">
+    <button class="mode-btn active" data-mode="flashcard"><span class="icon">📇</span>כרטיסיות</button>
+    <button class="mode-btn" data-mode="quiz-en-he"><span class="icon">🎯</span>חידון אנג→עב</button>
+    <button class="mode-btn" data-mode="quiz-he-en"><span class="icon">🧠</span>חידון עב→אנג</button>
+    <button class="mode-btn" data-mode="match"><span class="icon">🔗</span>התאמה</button>
+    <button class="mode-btn" data-mode="type"><span class="icon">⌨️</span>הקלדה</button>
+  </div>
+
+  <div class="filters">
+    <label for="cat-filter">קטגוריה:</label>
+    <select id="cat-filter">
+      <option value="all">הכל (כל המילים)</option>
+    </select>
+    <label class="mistakes-toggle">
+      <input type="checkbox" id="mistakes-only"> רק טעויות שלי 🔁
+    </label>
+    <button class="btn secondary" id="reset-btn" style="float:left;font-size:13px;padding:6px 14px;">איפוס סטטיסטיקה</button>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+
+  <div class="game-area" id="game-area"></div>
+</div>
+
+<script>
+const WORDS = [
+  // Similarity / Example
+  {en:"about",he:"אודות",cat:"דמיון/דוגמה"},
+  {en:"as",he:"כמו",cat:"דמיון/דוגמה"},
+  {en:"both",he:"שניהם",cat:"דמיון/דוגמה"},
+  {en:"especially",he:"במיוחד",cat:"דמיון/דוגמה"},
+  {en:"for example",he:"לדוגמה",cat:"דמיון/דוגמה"},
+  {en:"for instance",he:"לדוגמה",cat:"דמיון/דוגמה"},
+  {en:"in other words",he:"במילים אחרות",cat:"דמיון/דוגמה"},
+  {en:"in the same way",he:"באותה צורה",cat:"דמיון/דוגמה"},
+  {en:"just as",he:"בדיוק כמו",cat:"דמיון/דוגמה"},
+  {en:"like",he:"כמו",cat:"דמיון/דוגמה"},
+  {en:"similarly",he:"באופן דומה",cat:"דמיון/דוגמה"},
+  {en:"such as",he:"כגון",cat:"דמיון/דוגמה"},
+  {en:"that",he:"ש-",cat:"דמיון/דוגמה"},
+
+  // Addition
+  {en:"additionally",he:"בנוסף",cat:"הוספה"},
+  {en:"along with",he:"יחד עם",cat:"הוספה"},
+  {en:"also",he:"גם",cat:"הוספה"},
+  {en:"and",he:"ו-",cat:"הוספה"},
+  {en:"another",he:"עוד",cat:"הוספה"},
+  {en:"as well as",he:"כמו גם",cat:"הוספה"},
+  {en:"besides",he:"חוץ מזה",cat:"הוספה"},
+  {en:"furthermore",he:"יתרה על כך",cat:"הוספה"},
+  {en:"in addition",he:"בנוסף",cat:"הוספה"},
+  {en:"including",he:"כולל",cat:"הוספה"},
+  {en:"moreover",he:"יתר על כן",cat:"הוספה"},
+  {en:"not only",he:"לא רק",cat:"הוספה"},
+  {en:"not to mention",he:"שלא לדבר על",cat:"הוספה"},
+  {en:"too",he:"גם",cat:"הוספה"},
+  {en:"with",he:"עם / באמצעות",cat:"הוספה"},
+
+  // Subtraction
+  {en:"but",he:"חוץ מ-",cat:"הפחתה"},
+  {en:"except",he:"חוץ מ-",cat:"הפחתה"},
+  {en:"without",he:"בלי / ללא",cat:"הפחתה"},
+
+  // Emphasis
+  {en:"above all",he:"מעל לכל",cat:"הדגשה"},
+  {en:"both...and",he:"גם...וגם",cat:"הדגשה"},
+  {en:"certainly",he:"בהחלט / ודאי",cat:"הדגשה"},
+  {en:"either...or",he:"או...או",cat:"הדגשה"},
+  {en:"neither...nor",he:"לא...ולא",cat:"הדגשה"},
+  {en:"in particular",he:"במיוחד",cat:"הדגשה"},
+  {en:"specifically",he:"באופן מיוחד",cat:"הדגשה"},
+  {en:"in fact",he:"למעשה",cat:"הדגשה"},
+  {en:"in general",he:"באופן כללי",cat:"הדגשה"},
+  {en:"mainly",he:"בעיקר",cat:"הדגשה"},
+  {en:"not only...but",he:"לא רק...אלא גם",cat:"הדגשה"},
+  {en:"on one hand...on the other",he:"מצד אחד...מצד שני",cat:"הדגשה"},
+  {en:"surprisingly",he:"במפתיע",cat:"הדגשה"},
+  {en:"too much",he:"יותר מדי",cat:"הדגשה"},
+  {en:"whether...or",he:"בין אם...או",cat:"הדגשה"},
+  {en:"then again",he:"מצד שני",cat:"הדגשה"},
+  {en:"still",he:"בכל זאת",cat:"הדגשה"},
+
+  // Contrast
+  {en:"if",he:"אם",cat:"ניגוד/ויתור"},
+  {en:"even if",he:"גם אם",cat:"ניגוד/ויתור"},
+  {en:"even though",he:"אף על פי ש-",cat:"ניגוד/ויתור"},
+  {en:"despite",he:"למרות",cat:"ניגוד/ויתור"},
+  {en:"in spite of",he:"למרות",cat:"ניגוד/ויתור"},
+  {en:"nevertheless",he:"למרות זאת",cat:"ניגוד/ויתור"},
+  {en:"nonetheless",he:"למרות זאת",cat:"ניגוד/ויתור"},
+  {en:"however",he:"עם זאת / מצד שני",cat:"ניגוד/ויתור"},
+  {en:"although",he:"למרות ש-",cat:"ניגוד/ויתור"},
+  {en:"though",he:"אם כי",cat:"ניגוד/ויתור"},
+  {en:"on the other hand",he:"מצד שני",cat:"ניגוד/ויתור"},
+  {en:"whereas",he:"בעוד ש-",cat:"ניגוד/ויתור"},
+  {en:"while",he:"בעוד ש-",cat:"ניגוד/ויתור"},
+
+  // Time
+  {en:"after",he:"אחרי",cat:"זמן"},
+  {en:"afterwards",he:"לאחר מכן",cat:"זמן"},
+  {en:"when",he:"כש-",cat:"זמן"},
+  {en:"whenever",he:"בכל פעם ש-",cat:"זמן"},
+  {en:"as long as",he:"כל עוד",cat:"זמן"},
+  {en:"as soon as",he:"מיד כאשר",cat:"זמן"},
+  {en:"at first",he:"בהתחלה",cat:"זמן"},
+  {en:"at last",he:"סוף סוף",cat:"זמן"},
+  {en:"before",he:"לפני",cat:"זמן"},
+  {en:"during",he:"תוך כדי",cat:"זמן"},
+  {en:"eventually",he:"לבסוף",cat:"זמן"},
+  {en:"finally",he:"לבסוף",cat:"זמן"},
+  {en:"first",he:"ראשית",cat:"זמן"},
+  {en:"immediately",he:"מיד",cat:"זמן"},
+  {en:"instantly",he:"מיד",cat:"זמן"},
+  {en:"initially",he:"לראשונה",cat:"זמן"},
+  {en:"primarily",he:"בראש ובראשונה",cat:"זמן"},
+  {en:"last",he:"אחרון",cat:"זמן"},
+  {en:"later",he:"מאוחר יותר",cat:"זמן"},
+  {en:"meanwhile",he:"בינתיים",cat:"זמן"},
+  {en:"in the meantime",he:"בינתיים",cat:"זמן"},
+  {en:"next",he:"הבא",cat:"זמן"},
+  {en:"now",he:"עכשיו",cat:"זמן"},
+  {en:"once",he:"פעם / ברגע ש-",cat:"זמן"},
+  {en:"previously",he:"לפני כן",cat:"זמן"},
+  {en:"prior to",he:"לפני / קודם ל-",cat:"זמן"},
+  {en:"first of all",he:"קודם כל",cat:"זמן"},
+  {en:"shortly",he:"בקרוב / בקיצור",cat:"זמן"},
+  {en:"simultaneously",he:"בו זמנית",cat:"זמן"},
+  {en:"since",he:"מאז",cat:"זמן"},
+  {en:"soon",he:"בהקדם",cat:"זמן"},
+  {en:"yet",he:"עדיין לא",cat:"זמן"},
+  {en:"suddenly",he:"לפתע",cat:"זמן"},
+  {en:"then",he:"אז",cat:"זמן"},
+  {en:"until",he:"עד ש-",cat:"זמן"},
+  {en:"until now",he:"עד עתה",cat:"זמן"},
+  {en:"the former",he:"הקודם",cat:"זמן"},
+  {en:"the latter",he:"האחרון",cat:"זמן"},
+
+  // Place
+  {en:"here",he:"כאן",cat:"מיקום"},
+  {en:"there",he:"שם",cat:"מיקום"},
+  {en:"around",he:"סביב",cat:"מיקום"},
+  {en:"close",he:"קרוב",cat:"מיקום"},
+  {en:"beyond",he:"מעבר",cat:"מיקום"},
+  {en:"on top of",he:"מעל",cat:"מיקום"},
+  {en:"behind",he:"מאחור",cat:"מיקום"},
+  {en:"adjacent",he:"סמוך",cat:"מיקום"},
+  {en:"opposite",he:"ממול / מנגד",cat:"מיקום"},
+
+  // Purpose
+  {en:"in order to",he:"כדי ל-",cat:"מטרה"},
+  {en:"so as to",he:"כדי ל-",cat:"מטרה"},
+  {en:"in an attempt to",he:"בניסיון ל-",cat:"מטרה"},
+  {en:"with a view to",he:"בראייה ל-",cat:"מטרה"},
+  {en:"in an effort to",he:"במאמץ ל-",cat:"מטרה"},
+  {en:"for the purpose of",he:"למען המטרה של",cat:"מטרה"},
+  {en:"aiming to",he:"מכוון ל-",cat:"מטרה"},
+  {en:"with a focus on",he:"בהתמקדות על",cat:"מטרה"},
+
+  // Personal Opinion
+  {en:"I believe that",he:"אני מאמין ש-",cat:"דעה אישית"},
+  {en:"I feel",he:"אני מרגיש ש-",cat:"דעה אישית"},
+  {en:"I think",he:"אני חושב ש-",cat:"דעה אישית"},
+  {en:"in my opinion",he:"לדעתי",cat:"דעה אישית"},
+  {en:"in my view",he:"מנקודת מבטי",cat:"דעה אישית"},
+
+  // Cause
+  {en:"because",he:"מכיוון ש-",cat:"סיבה"},
+  {en:"because of",he:"בגלל ה-",cat:"סיבה"},
+  {en:"due to",he:"בגלל ש-",cat:"סיבה"},
+  {en:"due to the fact that",he:"לאור העובדה ש-",cat:"סיבה"},
+  {en:"for this reason",he:"מסיבה זו",cat:"סיבה"},
+  {en:"owing to the fact that",he:"בשל העובדה ש-",cat:"סיבה"},
+
+  // Result
+  {en:"accordingly",he:"בהתאם לכך",cat:"תוצאה"},
+  {en:"and that's why",he:"וזו הסיבה ש-",cat:"תוצאה"},
+  {en:"as a result",he:"כתוצאה",cat:"תוצאה"},
+  {en:"consequently",he:"כתוצאה מכך",cat:"תוצאה"},
+  {en:"hence",he:"לכן",cat:"תוצאה"},
+  {en:"so",he:"לכן",cat:"תוצאה"},
+  {en:"therefore",he:"לפיכך",cat:"תוצאה"},
+  {en:"thus",he:"כך",cat:"תוצאה"},
+
+  // Conclusion
+  {en:"briefly",he:"בקיצור",cat:"סיכום"},
+  {en:"in short",he:"בקצרה",cat:"סיכום"},
+  {en:"in conclusion",he:"לסיכום",cat:"סיכום"},
+  {en:"to sum up",he:"לסכם",cat:"סיכום"},
+  {en:"to conclude",he:"לסכם",cat:"סיכום"}
+];
+
+// State
+let state = {
+  mode: 'flashcard',
+  filter: 'all',
+  mistakesOnly: false,
+  current: null,
+  pool: [],
+  index: 0,
+  score: parseInt(localStorage.getItem('lw_score') || '0'),
+  streak: 0,
+  correct: parseInt(localStorage.getItem('lw_correct') || '0'),
+  wrong: parseInt(localStorage.getItem('lw_wrong') || '0'),
+  mistakes: JSON.parse(localStorage.getItem('lw_mistakes') || '[]'),
+  // matching state
+  matchSelected: null,
+  matchPairs: []
+};
+
+// Build category filter
+const cats = [...new Set(WORDS.map(w => w.cat))];
+const sel = document.getElementById('cat-filter');
+cats.forEach(c => {
+  const o = document.createElement('option');
+  o.value = c; o.textContent = c;
+  sel.appendChild(o);
+});
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getPool() {
+  let pool = WORDS;
+  if (state.filter !== 'all') pool = pool.filter(w => w.cat === state.filter);
+  if (state.mistakesOnly) {
+    pool = pool.filter(w => state.mistakes.includes(w.en));
+    if (pool.length === 0) {
+      return null;
+    }
+  }
+  return shuffle(pool);
+}
+
+function updateStats() {
+  document.getElementById('stat-score').textContent = state.score;
+  document.getElementById('stat-streak').textContent = state.streak;
+  document.getElementById('stat-correct').textContent = state.correct;
+  document.getElementById('stat-wrong').textContent = state.wrong;
+  document.getElementById('stat-mistakes').textContent = state.mistakes.length;
+  localStorage.setItem('lw_score', state.score);
+  localStorage.setItem('lw_correct', state.correct);
+  localStorage.setItem('lw_wrong', state.wrong);
+  localStorage.setItem('lw_mistakes', JSON.stringify(state.mistakes));
+}
+
+function updateProgress() {
+  const total = state.pool ? state.pool.length : 0;
+  const pct = total > 0 ? (state.index / total) * 100 : 0;
+  document.getElementById('progress').style.width = pct + '%';
+}
+
+function recordResult(word, isCorrect) {
+  if (isCorrect) {
+    state.score += (10 + state.streak * 2);
+    state.streak++;
+    state.correct++;
+    // remove from mistakes after correct
+    const idx = state.mistakes.indexOf(word.en);
+    if (idx > -1) state.mistakes.splice(idx, 1);
+  } else {
+    state.streak = 0;
+    state.wrong++;
+    if (!state.mistakes.includes(word.en)) {
+      state.mistakes.push(word.en);
+    }
+  }
+  updateStats();
+}
+
+function startMode() {
+  state.pool = getPool();
+  state.index = 0;
+  if (state.pool === null) {
+    document.getElementById('game-area').innerHTML = `
+      <div class="summary">
+        <h2>🎉 אין טעויות לחזרה!</h2>
+        <p>סימני "רק טעויות שלי" אבל עוד לא טעית באף מילה.</p>
+        <p>נסי מצב רגיל קודם.</p>
+        <div class="controls">
+          <button class="btn secondary" onclick="document.getElementById('mistakes-only').checked=false;state.mistakesOnly=false;startMode();">בטלי סינון</button>
+        </div>
+      </div>`;
+    return;
+  }
+  if (state.mode === 'flashcard') renderFlashcard();
+  else if (state.mode === 'quiz-en-he') renderQuiz('en-he');
+  else if (state.mode === 'quiz-he-en') renderQuiz('he-en');
+  else if (state.mode === 'match') renderMatch();
+  else if (state.mode === 'type') renderType();
+  updateProgress();
+}
+
+// FLASHCARD
+function renderFlashcard() {
+  if (state.index >= state.pool.length) return showSummary();
+  const w = state.pool[state.index];
+  const area = document.getElementById('game-area');
+  area.innerHTML = `
+    <div class="flashcard" id="card">
+      <div class="card-inner">
+        <div class="card-face card-front">
+          <div class="card-cat">${w.cat}</div>
+          <div class="card-word" style="margin-top:15px;">${w.en}</div>
+          <div class="card-hint">לחצי לראות תרגום 👆</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-word">${w.he}</div>
+          <div class="card-hint">לחצי שוב לחזור</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn secondary" onclick="prevCard()">⬅ הקודם</button>
+      <button class="btn danger" onclick="markHard()">קשה לי 😣</button>
+      <button class="btn" onclick="nextCard()">הבא ➡</button>
+    </div>
+    <p style="text-align:center;margin-top:15px;color:#666;font-size:14px;">
+      מילה ${state.index + 1} מתוך ${state.pool.length}
+    </p>
+  `;
+  document.getElementById('card').addEventListener('click', () => {
+    document.getElementById('card').classList.toggle('flipped');
+  });
+}
+function nextCard() { state.index++; updateProgress(); renderFlashcard(); }
+function prevCard() { if(state.index>0){state.index--;updateProgress();renderFlashcard();} }
+function markHard() {
+  const w = state.pool[state.index];
+  if (!state.mistakes.includes(w.en)) state.mistakes.push(w.en);
+  updateStats();
+  nextCard();
+}
+
+// QUIZ
+function renderQuiz(direction) {
+  if (state.index >= state.pool.length) return showSummary();
+  const w = state.pool[state.index];
+  const area = document.getElementById('game-area');
+  // generate 3 distractors of same field
+  const others = WORDS.filter(x => x.en !== w.en);
+  const distractors = shuffle(others).slice(0, 3);
+  const allOpts = shuffle([w, ...distractors]);
+
+  const showField = direction === 'en-he' ? 'en' : 'he';
+  const answerField = direction === 'en-he' ? 'he' : 'en';
+  const qLabel = direction === 'en-he' ? 'מה הפירוש בעברית?' : 'איך אומרים באנגלית?';
+
+  area.innerHTML = `
+    <div class="question">
+      <div class="q-text">${qLabel}</div>
+      <div class="q-word" ${showField==='he'?'style="direction:rtl"':''}>${w[showField]}</div>
+      <div class="q-cat">${w.cat}</div>
+    </div>
+    <div class="options" id="opts">
+      ${allOpts.map((o, i) => `
+        <button class="option" data-en="${o.en}" ${answerField==='en'?'style="direction:ltr"':''}>
+          ${o[answerField]}
+        </button>
+      `).join('')}
+    </div>
+    <div class="feedback" id="fb"></div>
+  `;
+  document.querySelectorAll('#opts .option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const chosen = btn.dataset.en;
+      const isCorrect = chosen === w.en;
+      document.querySelectorAll('#opts .option').forEach(b => {
+        b.classList.add('disabled');
+        if (b.dataset.en === w.en) b.classList.add('correct');
+        else if (b === btn) b.classList.add('wrong');
+      });
+      const fb = document.getElementById('fb');
+      if (isCorrect) {
+        fb.textContent = `✅ נכון! +${10 + state.streak * 2} נקודות`;
+        fb.className = 'feedback correct';
+      } else {
+        fb.textContent = `❌ הנכון: ${w[answerField]}`;
+        fb.className = 'feedback wrong';
+      }
+      recordResult(w, isCorrect);
+      setTimeout(() => {
+        state.index++;
+        updateProgress();
+        renderQuiz(direction);
+      }, isCorrect ? 800 : 1800);
+    });
+  });
+}
+
+// MATCH
+function renderMatch() {
+  const area = document.getElementById('game-area');
+  // take 6 from pool
+  const batch = state.pool.slice(state.index, state.index + 6);
+  if (batch.length === 0) return showSummary();
+  state.matchPairs = batch.map(w => w.en);
+  state.matchSelected = null;
+  const engCol = shuffle(batch);
+  const heCol = shuffle(batch);
+  area.innerHTML = `
+    <p style="text-align:center;color:#666;margin-bottom:15px;font-size:14px;">
+      התאימי בין כל מילה באנגלית לתרגום בעברית
+    </p>
+    <div class="match-area">
+      <div class="match-col">
+        <h3>אנגלית</h3>
+        ${engCol.map(w => `<div class="match-item eng" data-en="${w.en}" data-side="en">${w.en}</div>`).join('')}
+      </div>
+      <div class="match-col">
+        <h3>עברית</h3>
+        ${heCol.map(w => `<div class="match-item he" data-en="${w.en}" data-side="he">${w.he}</div>`).join('')}
+      </div>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div class="controls">
+      <button class="btn secondary" onclick="state.index+=6;startMode();">סבב חדש 🔄</button>
+    </div>
+  `;
+  document.querySelectorAll('.match-item').forEach(item => {
+    item.addEventListener('click', () => handleMatchClick(item));
+  });
+}
+function handleMatchClick(item) {
+  if (item.classList.contains('matched')) return;
+  if (!state.matchSelected) {
+    item.classList.add('selected');
+    state.matchSelected = item;
+    return;
+  }
+  if (state.matchSelected === item) {
+    item.classList.remove('selected');
+    state.matchSelected = null;
+    return;
+  }
+  // need different sides
+  if (state.matchSelected.dataset.side === item.dataset.side) {
+    state.matchSelected.classList.remove('selected');
+    item.classList.add('selected');
+    state.matchSelected = item;
+    return;
+  }
+  const a = state.matchSelected, b = item;
+  if (a.dataset.en === b.dataset.en) {
+    a.classList.remove('selected');
+    a.classList.add('matched');
+    b.classList.add('matched');
+    const w = WORDS.find(x => x.en === a.dataset.en);
+    recordResult(w, true);
+    document.getElementById('fb').innerHTML = '✅ התאמה נכונה!';
+    document.getElementById('fb').className = 'feedback correct';
+    // check if all matched
+    const remaining = document.querySelectorAll('.match-item:not(.matched)').length;
+    if (remaining === 0) {
+      setTimeout(() => { state.index += 6; updateProgress(); renderMatch(); }, 800);
+    }
+  } else {
+    a.classList.add('wrong-flash');
+    b.classList.add('wrong-flash');
+    const wA = WORDS.find(x => x.en === a.dataset.en);
+    recordResult(wA, false);
+    document.getElementById('fb').innerHTML = '❌ לא נכון, נסי שוב';
+    document.getElementById('fb').className = 'feedback wrong';
+    setTimeout(() => {
+      a.classList.remove('wrong-flash', 'selected');
+      b.classList.remove('wrong-flash');
+    }, 700);
+  }
+  state.matchSelected = null;
+}
+
+// TYPE
+function renderType() {
+  if (state.index >= state.pool.length) return showSummary();
+  const w = state.pool[state.index];
+  const area = document.getElementById('game-area');
+  area.innerHTML = `
+    <div class="type-area">
+      <div class="q-text" style="color:#666;">הקלידי באנגלית:</div>
+      <div class="q-word" style="direction:rtl;font-size:36px;color:#4facfe;margin:15px 0;font-weight:bold;">${w.he}</div>
+      <div class="q-cat" style="background:#f0f4f8;padding:4px 12px;border-radius:12px;display:inline-block;font-size:13px;color:#666;">${w.cat}</div>
+      <input type="text" class="type-input" id="typeInput" placeholder="הקלידי כאן..." autocomplete="off">
+      <div class="feedback" id="fb"></div>
+      <div class="controls">
+        <button class="btn" onclick="checkType()">בדקי ✓</button>
+        <button class="btn secondary" onclick="skipType()">דלג / הראה תשובה</button>
+      </div>
+    </div>
+  `;
+  const input = document.getElementById('typeInput');
+  input.focus();
+  input.addEventListener('keypress', e => { if (e.key === 'Enter') checkType(); });
+}
+function checkType() {
+  const w = state.pool[state.index];
+  const input = document.getElementById('typeInput');
+  const ans = input.value.trim().toLowerCase();
+  const isCorrect = ans === w.en.toLowerCase();
+  const fb = document.getElementById('fb');
+  if (isCorrect) {
+    fb.textContent = `✅ נכון! +${10 + state.streak * 2} נקודות`;
+    fb.className = 'feedback correct';
+    recordResult(w, true);
+  } else {
+    fb.textContent = `❌ הנכון: ${w.en}`;
+    fb.className = 'feedback wrong';
+    recordResult(w, false);
+  }
+  input.disabled = true;
+  setTimeout(() => { state.index++; updateProgress(); renderType(); }, isCorrect ? 900 : 2000);
+}
+function skipType() {
+  const w = state.pool[state.index];
+  recordResult(w, false);
+  document.getElementById('fb').textContent = `הנכון: ${w.en}`;
+  document.getElementById('fb').className = 'feedback wrong';
+  setTimeout(() => { state.index++; updateProgress(); renderType(); }, 1500);
+}
+
+function showSummary() {
+  const total = state.pool.length;
+  const sessionCorrect = state.correct;
+  const pct = total > 0 ? Math.round((state.streak / total) * 100) : 0;
+  let cls = 'poor', msg = 'תמשיכי לתרגל - אפשר יותר!';
+  if (state.streak >= total * 0.8) { cls = 'great'; msg = 'מצוין! את מוכנה לבגרות 🎉'; }
+  else if (state.streak >= total * 0.5) { cls = 'good'; msg = 'יפה! עוד תרגול קטן ותהיי שם.'; }
+
+  const mistakeWords = state.mistakes.slice(0, 15).map(en => {
+    const w = WORDS.find(x => x.en === en);
+    return w ? `<div class="m-item"><span class="m-eng">${w.en}</span> = ${w.he} <small style="color:#999">(${w.cat})</small></div>` : '';
+  }).join('');
+
+  document.getElementById('game-area').innerHTML = `
+    <div class="summary">
+      <h2>סבב הסתיים!</h2>
+      <div class="score ${cls}">${state.score}</div>
+      <p>${msg}</p>
+      <p>סה"כ ניקוד מצטבר • רצף נוכחי: ${state.streak} 🔥</p>
+      ${state.mistakes.length > 0 ? `
+        <div class="mistakes-list">
+          <h3>📝 מילים שטעית בהן (${state.mistakes.length}):</h3>
+          ${mistakeWords}
+          ${state.mistakes.length > 15 ? `<p style="margin-top:8px;color:#666;font-size:12px;">...ועוד ${state.mistakes.length - 15} מילים</p>` : ''}
+        </div>
+        <div class="controls">
+          <button class="btn danger" onclick="document.getElementById('mistakes-only').checked=true;state.mistakesOnly=true;startMode();">תרגלי רק טעויות 🔁</button>
+          <button class="btn" onclick="startMode()">סבב חדש 🔄</button>
+        </div>
+      ` : `
+        <div class="controls">
+          <button class="btn" onclick="startMode()">עוד סבב 🔄</button>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// Mode buttons
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+    startMode();
+  });
+});
+document.getElementById('cat-filter').addEventListener('change', e => {
+  state.filter = e.target.value; startMode();
+});
+document.getElementById('mistakes-only').addEventListener('change', e => {
+  state.mistakesOnly = e.target.checked; startMode();
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (confirm('לאפס את כל הסטטיסטיקה והטעויות?')) {
+    state.score = 0; state.streak = 0; state.correct = 0; state.wrong = 0; state.mistakes = [];
+    updateStats(); startMode();
+  }
+});
+
+// Init
+updateStats();
+startMode();
+</script>
+</body>
+</html>
